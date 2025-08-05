@@ -20,15 +20,25 @@
             margin-top: 20px;
             font-size: 16px;
         }
-        #result {
+        #result, #actualResult {
             margin-top: 20px;
             font-size: 18px;
             font-weight: bold;
         }
+        hr {
+            margin: 30px 0;
+            border: none;
+            border-top: 6px solid #ff0ddb;
+        }
+        .creator-info {
+            color: #0b42e8;
+            font-weight: bold;
+            margin-top: 40px;
+            font-size: 12px;
+        }
     </style>
 </head>
 <body>
-
     <h1>零件加工计算器</h1>
     
     <label for="diameter">直径 (mm):</label>
@@ -46,61 +56,92 @@
     <label for="density">选择密度:</label>
     <select id="density">
         <option value="8.5">C3064铜 (8.5 g/cm³)</option>
-        <option value="2.70">6061铝 (2.70 g/cm³)</option>
+        <option value="8.4">Hpb59-1铜 (8.4 g/cm³)</option>
+        <option value="8.4">PW49460无铅黄铜(HBi60-1-0.05)铜 (8.4 g/cm³)</option>
+        <option value="2.2">6061铝 (2.2 g/cm³)</option>
+        <option value="2.2">5052铝 (2.2 g/cm³)</option>
+        <option value="2.2">7075铝 (2.2 g/cm³)</option>
+        <option value="7.9">SUS303不锈钢 (7.9 g/cm³)</option>
+        <option value="7.9">SUS304不锈钢 (7.9 g/cm³)</option>
+        <option value="8.2">4J32殷钢 (8.2 g/cm³)</option>
+        <option value="8.2">4J36殷钢 (8.2 g/cm³)</option>
+        <option value="4.5">6A1-4V钛合金 (4.5 g/cm³)</option>
+        <option value="1.4">POM(聚甲醛/塞钢) (1.4 g/cm³)</option>
+        <option value="1.05">ABS (1.05 g/cm³)</option>
+        <option value="2.2">聚四氟乙稀 (2.2 g/cm³)</option>
+        <option value="1">尼龙 (1 g/cm³)</option>
     </select><br>
+
+    <label for="numParts">零件加工件数:</label>
+    <input type="number" id="numParts" placeholder="输入零件加工件数"><br>
 
     <button onclick="calculate()">计算</button>
 
     <div id="result"></div>
 
+    <hr>
+    
+    <h2>实际发料计算</h2>
+    <label for="actualMaterialCount">实际发料根数:</label>
+    <input type="number" id="actualMaterialCount" placeholder="输入实际发料根数"><br>
+
+    <button onclick="calculateActual()">计算实际发料重量</button>
+
+    <div id="actualResult"></div>
+
+    <div class="creator-info">制作者: DLL &nbsp;&nbsp;版本: V/0</div>
+
     <script>
         function calculate() {
-            var diameter = parseFloat(document.getElementById("diameter").value) / 10; // 转换为 cm
-            var materialLength = parseFloat(document.getElementById("materialLength").value) / 10; // 转换为 cm
-            var headLength = parseFloat(document.getElementById("headLength").value) / 10; // 转换为 cm
-            var pieceWeight = parseFloat(document.getElementById("pieceWeight").value) / 1000; // 转换为 kg
-            var density = parseFloat(document.getElementById("density").value); // g/cm³
+            var diameter = parseFloat(document.getElementById("diameter").value) / 10; // cm
+            var materialLength = parseFloat(document.getElementById("materialLength").value); // mm
+            var headLength = parseFloat(document.getElementById("headLength").value) / 10; // cm
+            var pieceWeight = parseFloat(document.getElementById("pieceWeight").value) / 1000; // kg
+            var density = parseFloat(document.getElementById("density").value);
+            var numParts = parseInt(document.getElementById("numParts").value);
 
-            if (isNaN(diameter) || isNaN(materialLength) || isNaN(headLength) || isNaN(pieceWeight) || isNaN(density)) {
+            if (isNaN(diameter) || isNaN(materialLength) || isNaN(headLength) || isNaN(pieceWeight) || isNaN(density) || isNaN(numParts)) {
                 alert("请输入有效的数字");
                 return;
             }
 
-            // 计算横截面积
             var area = 3.14 * diameter * diameter / 4;
-
-            // 计算每根材料的实际可用长度
-            var usableLength = materialLength - headLength;
-
-            // 计算每根材料的实际可用重量（去除料头长度后的可用材料重量）
-            var usableWeightPerMaterial = area * usableLength * density / 1000; // kg
-
-            // 计算每根材料的总重量（包含料头的重量）
-            var totalWeightPerMaterial = area * materialLength * density / 1000; // kg
-
-            // 计算每根材料能加工的零件数量
+            var usableLength = materialLength / 10 - headLength;
+            var usableWeightPerMaterial = area * usableLength * density / 1000;
+            var totalWeightPerMaterial = area * (materialLength / 10) * density / 1000;
             var numPiecesPerMaterial = usableWeightPerMaterial / pieceWeight;
-
-            // 计算所需材料根数
-            var requiredMaterials = 350 / numPiecesPerMaterial;
-
-            // 四舍五入到两位数
-            requiredMaterials = Math.ceil(requiredMaterials * 100) / 100;
-
-            // 计算所需总材料长度
+            var requiredMaterials = Math.ceil((numParts / numPiecesPerMaterial) * 100) / 100;
             var requiredLength = requiredMaterials * materialLength;
-
-            // 计算所需材料的总重量
             var totalWeight = requiredMaterials * totalWeightPerMaterial;
 
             document.getElementById("result").innerHTML = `
                 每根材料能加工的零件数量: ${numPiecesPerMaterial.toFixed(2)}<br>
                 所需材料根数: ${requiredMaterials.toFixed(2)}<br>
                 所需总材料长度: ${requiredLength.toFixed(2)} mm<br>
-                所需材料的总重量: ${totalWeight.toFixed(2)} kg
+                所需材料的总重量: ${totalWeight.toFixed(3)} kg
+            `;
+        }
+
+        function calculateActual() {
+            var actualMaterialCount = parseInt(document.getElementById("actualMaterialCount").value);
+            if (isNaN(actualMaterialCount)) {
+                alert("请输入有效的实际发料根数");
+                return;
+            }
+
+            var diameter = parseFloat(document.getElementById("diameter").value) / 10;
+            var materialLength = parseFloat(document.getElementById("materialLength").value) / 10;
+            var density = parseFloat(document.getElementById("density").value);
+
+            var area = 3.14 * diameter * diameter / 4;
+            var totalWeightPerMaterial = area * materialLength * density / 1000;
+            var actualTotalWeight = actualMaterialCount * totalWeightPerMaterial;
+
+            document.getElementById("actualResult").innerHTML = `
+                实际发料根数: ${actualMaterialCount}<br>
+                实际发料总重量: ${actualTotalWeight.toFixed(3)} kg
             `;
         }
     </script>
-
 </body>
 </html>
